@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<flectra>
+    <data>
+        <template id="report_followup">
+            <t t-call="web.html_container">
+                <t t-foreach="ids_to_objects(data['partner_ids'])" t-as="o">
+                    <t t-set="o" t-value="o.with_context({'lang':o.partner_id.lang})"/>
+                    <t t-call="web.external_layout">
+                        <div class="page">
+                            <div class="row">
+                                <div class="col-xs-5 col-xs-offset-7">
+                                    <div t-field="o.invoice_partner_id"
+                                         t-field-options='{"widget": "contact", "fields": ["address", "name", "phone", "fax"], "no_marker": true}'/>
+                                    <span t-field="o.partner_id.vat"/>
+                                </div>
+                            </div>
+
+                            <p>
+                                Document: Customer account statement
+                                <br/>
+                                Date:
+                                <span t-esc="data['date']"/>
+                                <br/>
+                                Customer ref:
+                                <span t-field="o.partner_id.ref"/>
+                            </p>
+
+                            <p t-raw="get_text(o,data['followup_id']).replace('\n', '&lt;br&gt;')"/>
+                            <t t-foreach="getLines(o)" t-as="cur_lines">
+
+                                <table class="table table-condensed" style="margin-top: 50px;">
+                                    <thead>
+                                        <tr>
+                                            <th>Invoice Date</th>
+                                            <th>Description</th>
+                                            <th class="text-center">Ref</th>
+                                            <th class="text-center">Maturity Date</th>
+                                            <th class="text-right">Amount</th>
+                                            <th class="text-center">Li.</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="o.partner_id.unreconciled_aml_ids" t-as="aml">
+                                            <td>
+                                                <span t-esc="aml.date"/>
+                                            </td>
+                                            <td>
+                                                <span t-esc="aml.move_id.name"/>
+                                            </td>
+                                            <td>
+                                                <span t-esc="aml.ref"/>
+                                            </td>
+                                            <td class="text-center">
+                                                <span t-esc="aml.date_maturity"/>
+                                            </td>
+                                            <td class="text-right">
+                                                <span t-esc="aml.balance"/>
+                                            </td>
+                                            <td>
+                                                <span t-esc="aml.blocked and 'X' or ''"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td class="text-center">
+                                                <b>Total Due:</b>
+                                            </td>
+                                            <td class="text-right">
+                                                <b>
+                                                    <span t-esc="o.partner_id.payment_amount_due"/>
+                                                </b>
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr t-foreach="cur_lines['line']" t-as="line">
+                                            <td>
+                                                <span t-esc="line['date']"/>
+                                            </td>
+                                            <td>
+                                                <span t-esc="line['name']"/>
+                                            </td>
+                                            <td>
+                                                <span t-esc="line['ref']"/>
+                                            </td>
+                                            <td class="text-center">
+                                                <span t-esc="line['date_maturity']"/>
+                                            </td>
+                                            <td class="text-right">
+                                                <span t-esc="line['balance']"/>
+                                            </td>
+                                            <td>
+                                                <span t-esc="line['blocked'] and 'X' or ''"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td class="text-center">
+                                                <b>Total Overdue:</b>
+                                            </td>
+                                            <td class="text-right">
+                                                <b>
+                                                    <span t-esc="cur_lines['total']"/>
+                                                </b>
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </t>
+                        </div>
+                    </t>
+                </t>
+            </t>
+        </template>
+    </data>
+</flectra>

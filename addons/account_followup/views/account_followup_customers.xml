@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<flectra>
+    <data>
+
+        <!-- followup of customers views -->
+
+        <record id="customer_followup_tree" model="ir.ui.view">
+            <field name="name">res.partner.followup.inherit.tree</field>
+            <field name="model">res.partner</field>
+            <field name="priority" eval="20"/>
+            <field name="arch" type="xml">
+                <tree string="Customer Followup" create="false" delete="false">
+                    <field name="display_name"/>
+                    <field name="payment_next_action_date"/>
+                    <field name="payment_next_action" string="Schedule Action"/>
+                    <field name="user_id" invisible="1"/>
+                    <field name="country_id" invisible="1"/>
+                    <field name="parent_id" invisible="1"/>
+                    <field name="payment_responsible_id"/>
+                    <field name="payment_earliest_due_date"/>
+                    <field name="latest_followup_level_id"/>
+                    <field name="payment_amount_overdue"/>
+                    <field name="payment_amount_due"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="view_partner_inherit_customer_followup_tree" model="ir.ui.view">
+            <field name="name">res.partner.followup.inherit.tree</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_tree"/>
+            <field name="arch" type="xml">
+                <field name="display_name" position="after">
+                    <field name="payment_responsible_id" invisible="1"/>
+                </field>
+            </field>
+        </record>
+
+        <record id="customer_followup_search_view" model="ir.ui.view">
+            <field name="name">Search</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_res_partner_filter"/>
+            <field name="arch" type="xml">
+                <xpath expr="//group[1]" position="after">
+                    <group string="Follow-up">
+                        <filter string="Partners with Overdue Credits"
+                                domain="[('payment_amount_overdue', '&gt;', 0.0)]"
+                                name="credits"/>
+                        <separator/>
+                        <filter string="Follow-ups To Do"
+                                domain="[('payment_amount_overdue', '&gt;', 0.0),('payment_earliest_due_date','&lt;=', time.strftime('%%Y-%%m-%%d'))]"
+                                name="todo"/>
+                        <separator/>
+                        <filter string="No Responsible" domain="[('payment_responsible_id', '=', False)]"/>
+                        <filter string="My Follow-ups" domain="[('payment_responsible_id','=', uid)]" name="my"/>
+                    </group>
+                </xpath>
+                <xpath expr="//group[1]" position="inside">
+                    <filter string="Follow-up Responsible" context="{'group_by':'payment_responsible_id'}"/>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="res_partner_followup_form_view" model="ir.ui.view">
+            <field name="name">res.partner.followup.form.view</field>
+            <field name="model">res.partner</field>
+            <field name="groups_id" eval="[(4, ref('account.group_account_invoice'))]"/>
+            <field name="arch" type="xml">
+                <form string="Account Followup">
+                    <sheet>
+                        <div class="oe_button_box" name="button_box">
+                            <button name="do_button_print" type="object" string="Print Overdue Payments"
+                                    groups="account.group_account_manager" icon="fa-print"
+                                    help="Print overdue payments report independent of follow-up line"
+                                    attrs="{'invisible':[('payment_amount_due', '&lt;=', 0.0)]}"/>
+                            <button name="do_partner_mail" type="object" string="Send Overdue Email"
+                                    groups="account.group_account_manager" icon="fa-envelope"
+                                    attrs="{'invisible':[('payment_amount_due', '&lt;=', 0.0)]}"
+                                    help="If not specified by the latest follow-up level, it will send from the default email template"/>
+                        </div>
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                        <p attrs="{'invisible':[('latest_followup_date','=', False)]}">
+                            The<field name="latest_followup_date" class="oe_inline"/>, the latest payment follow-up
+                            was:
+                            <field name="latest_followup_level_id" class="oe_inline"/>
+                        </p>
+                        <group>
+                            <field name="payment_responsible_id" placeholder="Responsible of credit collection"
+                                   class="oe_inline"/>
+                            <label for="payment_next_action" string="Schedule Action"/>
+                            <div>
+                                <field name="payment_next_action_date" class="oe_inline"/>
+                                <button name="action_done" type="object" string="⇾ Mark as Done"
+                                        help="Click to mark the action as done." class="oe_link"
+                                        attrs="{'invisible':[('payment_next_action_date','=', False)]}"
+                                        groups="account.group_account_manager"/>
+                                <field name="payment_next_action"
+                                       placeholder="Action to be taken e.g. Give a phonecall, Check if it's paid, ..."/>
+                            </div>
+                        </group>
+                        <label for="payment_note" class="oe_edit_only"/>
+                        <field name="payment_note"
+                               placeholder="He said the problem was temporary and promised to pay 50%% before 15th of May, balance before 1st of July."/>
+                        <p class="oe_grey">
+                            Below is the history of the transactions of this
+                            customer. You can check "No Follow-up" in
+                            order to exclude it from the next follow-up actions.
+                        </p>
+                        <field name="unreconciled_aml_ids">
+                            <tree string="Account Move line" editable="bottom" create="false" delete="false"
+                                  decoration-danger="(not date_maturity or date_maturity&lt;current_date) and balance&gt;0">
+                                <field name="date" readonly="True"/>
+                                <field name="company_id" readonly="True" groups="base.group_multi_company"/>
+                                <field name="move_id" readonly="True"/>
+                                <field name="blocked"/>
+                                <field name="followup_line_id"/>
+                                <field name="date_maturity" readonly="True"/>
+                                <field name="balance" readonly="True"/>
+                                <field name="followup_line_id" invisible='1'/>
+                            </tree>
+                        </field>
+                        <group class="oe_subtotal_footer oe_right">
+                            <field name="payment_amount_due"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_customer_followup_act" model="ir.actions.act_window">
+            <field name="name">Manual Follow-Ups</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('customer_followup_tree')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('res_partner_followup_form_view')})]"/>
+            <field name="res_model">res.partner</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="domain">[('payment_amount_due', '>', 0.0)]</field>
+            <field name="context">{'Followupfirst':True, 'search_default_todo': True}</field>
+            <field name="search_view_id" ref="customer_followup_search_view"/>
+        </record>
+
+        <!--Inherited view -->
+        <record id="view_partner_inherit_followup_form" model="ir.ui.view">
+            <field name="name">res.partner.followup.form.inherit</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="model">res.partner</field>
+            <field name="groups_id" eval="[(4, ref('account.group_account_invoice'))]"/>
+            <field name="arch" type="xml">
+                <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                    <button name="open_follow_ups" type="object" string="Follow Ups"
+                            groups="account.group_account_manager" icon="fa-arrow-up"/>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Menus about followup of customers -->
+        <menuitem id="account_followup_menu" action="action_customer_followup_act"
+                  parent="menu_finance_followup" name="Do Manual Follow-Ups" sequence="3"/>
+
+        <record id="action_customer_my_followup" model="ir.actions.act_window">
+            <field name="name">My Follow-Ups</field>
+            <field name="view_id" ref="customer_followup_tree"/>
+            <field name="res_model">res.partner</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="domain">[('payment_amount_due', '>', 0.0)]</field>
+            <field name="context">{'Followupfirst':True, 'search_default_todo': True, 'search_default_my': True}</field>
+            <field name="search_view_id" ref="customer_followup_search_view"/>
+        </record>
+        <menuitem id="menu_sale_followup" parent="menu_finance_followup" sequence="1"
+                  action="action_customer_my_followup" groups="account.group_account_invoice"/>
+    </data>
+</flectra>
