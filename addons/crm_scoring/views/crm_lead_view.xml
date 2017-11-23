@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flectra>
+    <record id="inherit_crm_lead_score_form_view" model="ir.ui.view">
+        <field name="name">inherit.crm.lead.form.opp.score</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_form_view_leads"/>
+        <field name="arch" type="xml">
+            <field name="priority" position="after">
+                <field name="scoring_rule_id" options="{'no_create': True, 'no_create_edit': True}" invisible="1"/>
+                <field name="score"/>
+            </field>
+            <field name="team_id" position="after">
+                <field name="contact_type_id" options="{'no_create': True, 'no_create_edit': True}"/>
+                <field name="contact_status_id" options="{'no_create': True, 'no_create_edit': True}"/>
+            </field>
+            <field name="tag_ids" position="after">
+                <field name="is_prospective_lead"/>
+            </field>
+        </field>
+    </record>
+</flectra>
